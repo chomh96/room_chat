@@ -1,0 +1,172 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <title><%= title %></title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <script src="//cdnjs.cloudflare.com/ajax/libs/jquery/3.2.1/jquery.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/socket.io-client@2/dist/socket.io.js" charset="utf-8"></script>
+
+    <!-- 합쳐지고 최소화된 최신 CSS -->
+    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.2/css/bootstrap.min.css">
+    <!-- 부가적인 테마 -->
+    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.2/css/bootstrap-theme.min.css">
+    <!-- 합쳐지고 최소화된 최신 자바스크립트 -->
+    <script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.2/js/bootstrap.min.js"></script>
+
+    <style media="screen">
+      .wrapper{
+        text-align: center;
+        margin: auto;
+        max-width: 600px;
+        /* background: rgb(80, 184, 235); */
+      }
+
+      .header{
+        margin-bottom: 40px;
+      }
+
+      .mb-1{
+        margin-bottom: 10px;
+      }
+      .mb-2{
+        margin-bottom: 20px;
+      }
+      .mb-3{
+        margin-bottom: 30px;
+      }
+      #start{
+        text-align: left;
+      }
+    </style>
+
+  </head>
+  <body>
+    <div class="wrapper">
+      <div class="header">
+        <h1><%= title %> System</h1>
+        <span>- Made by MINO -</span>
+      </div>
+      <div id="ready">
+        <h4 class='mb-2'>채팅방 목록</h4>
+        <div class='chat_list'></div>
+      </div>
+      <div id="start">
+        <div class="title mb-1"></div>
+        <div class="count mb-1"></div>
+        <div class="layout" style="height:300px; overflow:auto">
+          <div class="chat">
+          </div>
+        </div>
+        <br>
+        <div class="">
+          <span>입력 : </span>
+          <input type="text" name="msg" value="" style="width:70%;">
+          <button type="submit" id="send" name="button">전송</button>
+          <input type="hidden" class="name" name="name" value="">
+        </div>
+      </div>
+    </div>
+
+    <!-- <div class="content" style="text-align: center;">
+      <div class="count"></div>
+      <div class="title"></div>
+      <br>
+      <div class="">
+        <div class="layout" style="height:300px; overflow:auto">
+          <div class="chat">
+          </div>
+        </div>
+        <br>
+        <div class="">
+          <span>입력 : </span>
+          <input type="text" name="msg" value="" style="width:500px;">
+          <button type="submit" name="button">전송</button>
+          <input type="hidden" class="name" name="name" value="">
+        </div>
+      </div>
+    </div> -->
+  </body>
+
+  <script type="text/javascript">
+    $("#start").hide();
+
+    var url = new URL(window.location.href);
+
+    var _ROOM = 0;
+
+    const _RoomCount = 7;
+    for (var i = 1; i <= _RoomCount; i++) {
+      $(".chat_list").append("<div class='mb-1'><button class='btn btn-info' onclick='ClickRoom("+i+")'>"+i+"번방 입장</button></div>");
+    }
+
+
+    var temp_name = ['Apple', 'Banana', 'Cherry', 'Dog', 'Elly', 'Fxxx', 'God'];
+
+    var ran = Math.floor(Math.random() * 7);
+    var name = temp_name[ran];
+
+
+    // Socket Connect
+    const socket = io.connect("jghee717.cafe24.com:3100");
+
+    socket.io.on("connect_error", function(error) {
+       socket.disconnect();
+       console.log("Socket can't connect to server!");
+    });
+
+    socket.on("connect", function(ee){
+        console.log("Socket connect!");
+    });
+
+    socket.on('recv_msg', function (data) {
+        console.log("recv");
+        $(".chat").append("<div>"+data.data+"</div>");
+        move_page();
+    });
+
+    socket.on('count', function (data) {
+        $(".count").html("접속자 수 : "+data.data);
+    });
+
+    function send_msg() {
+      var val = $('input[name=msg]').val();
+
+      socket.emit("send_msg", {
+        data: val,
+        name: name,
+        room: _ROOM
+      });
+
+      $('input[name=msg]').val("");
+      $(".chat").append("<div style='color:blue'>"+name+" : "+val+"</div>");
+      move_page();
+    }
+
+    function ClickRoom(_i){
+      _ROOM = _i;
+      $(".title").html("["+_ROOM+"번방] "+name+"님 환영합니다~");
+
+      socket.emit("room", {data: _i, name : name});
+      $("#ready").hide();
+      $("#start").show();
+    }
+
+    $("#send").click(function(){
+      send_msg();
+    })
+
+    $('input[name=msg]').keypress(function(event){
+       if ( event.which == 13 ) {
+         send_msg();
+       }
+    });
+
+    function move_page(){
+      var height = $('.chat').height();
+      $( '.layout' ).scrollTop(height);
+    }
+
+  </script>
+
+</html>
